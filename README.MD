@@ -69,7 +69,7 @@ json-server --watch db.json --port 3001
 npm run dev
 ```
 
-📊 Features
+### 📊 Features
 
 🔐 Role-based dashboard rendering
 
@@ -84,7 +84,7 @@ npm run dev
 ⚡ Optimized with Suspense and skeleton loaders
 
 
-✅ Roadmap
+### ✅ Roadmap
 
  Role-based layouts and routing
 
@@ -97,7 +97,7 @@ npm run dev
  Deploy with CI/CD via Vercel
 
 
-🧠 Author
+### 🧠 Author
 
 Jamiu Akinlade (Jhay Klaus) — Frontend Engineer
 Let’s connect on [LinkedIn](https://www.linkedin.com/in/jamiu-akinlade-7081b9211/)
