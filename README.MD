@@ -69,4 +69,36 @@ json-server --watch db.json --port 3001
 npm run dev
 ```
 
+📊 Features
+
+🔐 Role-based dashboard rendering
+
+📈 Analytics overview (mocked)
+
+📦 Task and project management
+
+📬 Notification system
+
+🎨 Fully responsive UI
+
+⚡ Optimized with Suspense and skeleton loaders
+
+
+✅ Roadmap
+
+ Role-based layouts and routing
+
+ Mock APIs with json-server
+
+ Drag & drop task manager (like Trello)
+
+ Theme toggling (light/dark)
+
+ Deploy with CI/CD via Vercel
+
+
+🧠 Author
+
+Jamiu Akinlade (Jhay Klaus) — Frontend Engineer
+Let’s connect on [LinkedIn](https://www.linkedin.com/in/jamiu-akinlade-7081b9211/)
 
