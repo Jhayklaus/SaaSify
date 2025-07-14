@@ -90,10 +90,9 @@ npm run dev
 ---
 
 
-
-
 ### 🧠 Author
 
-Jamiu Akinlade (Jhay Klaus) — Frontend Engineer
+Jamiu Akinlade (Jhay Klaus) — Frontend Engineer.
+
 Let’s connect on [LinkedIn](https://www.linkedin.com/in/jamiu-akinlade-7081b9211/)
 
