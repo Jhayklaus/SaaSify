@@ -69,6 +69,9 @@ json-server --watch db.json --port 3001
 npm run dev
 ```
 
+---
+
+
 ### 📊 Features
 
 🔐 Role-based dashboard rendering
@@ -84,17 +87,9 @@ npm run dev
 ⚡ Optimized with Suspense and skeleton loaders
 
 
-### ✅ Roadmap
+---
 
- Role-based layouts and routing
 
- Mock APIs with json-server
-
- Drag & drop task manager (like Trello)
-
- Theme toggling (light/dark)
-
- Deploy with CI/CD via Vercel
 
 
 ### 🧠 Author
