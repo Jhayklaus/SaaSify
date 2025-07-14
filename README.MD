@@ -47,8 +47,14 @@ cd saasify
 
 ### 2. Install dependencies
 
+### -NPM
 ```bash
-npm install
+npm install 
+```
+
+### -YARN
+```bash
+yarn
 ```
 
 ### 3. Run the mock API server
