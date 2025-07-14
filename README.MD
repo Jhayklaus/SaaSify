@@ -43,3 +43,24 @@ This project showcases:
 ```bash
 git clone https://github.com/Jhayklaus/SaaSify.git
 cd saasify
+```
+
+### 2. Install dependencies
+
+```bash
+npm install
+```
+
+### 3. Run the mock API server
+
+```bash
+json-server --watch db.json --port 3001
+```
+
+### 4. Start the frontend app
+
+```bash
+npm run dev
+```
+
+
