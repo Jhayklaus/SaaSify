@@ -60,7 +60,7 @@ yarn
 ### 3. Run the mock API server
 
 ```bash
-json-server --watch db.json --port 3001
+yarn serve:api
 ```
 
 ### 4. Start the frontend app
