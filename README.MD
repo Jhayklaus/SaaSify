@@ -60,13 +60,19 @@ yarn
 ### 3. Run the mock API server
 
 ```bash
-yarn serve:api
+yarn serve:api (for yarn users)
+```
+```bash
+npm serve:api (for npm users)
 ```
 
 ### 4. Start the frontend app
 
 ```bash
-npm run dev
+npm run dev (for npm users)
+```
+```bash
+yarn dev (for yarn users)
 ```
 
 ---
