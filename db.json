@@ -1,0 +1,113 @@
+{
+  "users": [
+    {
+      "id": "1",
+      "name": "Jhay Klaus",
+      "email": "jhay.klaus@example.com",
+      "role": "admin",
+      "password": "1234abcd"
+    },
+    {
+      "id": "2",
+      "name": "Sandra Miller",
+      "email": "sandra.miller@example.com",
+      "role": "manager",
+      "password": "1234abcd"
+    },
+    {
+      "id": "3",
+      "name": "Toby Obinna",
+      "email": "toby.obinna@example.com",
+      "role": "user",
+      "password": "1234abcd"
+    },
+    {
+      "id": "4",
+      "name": "Ada Nnaji",
+      "email": "ada.nnaji@example.com",
+      "role": "user",
+      "password": "1234abcd"
+    },
+    {
+      "id": "5",
+      "name": "Linda Ayodele",
+      "email": "linda.ayodele@example.com",
+      "role": "manager",
+      "password": "1234abcd"
+    },
+    {
+      "id": "6",
+      "name": "Kolawole Adebayo",
+      "email": "kola.adebayo@example.com",
+      "role": "user",
+      "password": "1234abcd"
+    },
+    {
+      "id": "8",
+      "name": "Nkechi Eze",
+      "email": "nkechi.eze@example.com",
+      "role": "user",
+      "password": "1234abcd"
+    },
+    {
+      "id": "10",
+      "name": "Amara Umeh",
+      "email": "amara.umeh@example.com",
+      "role": "user",
+      "password": "1234abcd"
+    },
+    {
+      "id": "11",
+      "name": "Yusuf Bello",
+      "email": "yusuf.bello@example.com",
+      "role": "manager",
+      "password": "1234abcd"
+    },
+    {
+      "id": "12",
+      "name": "Ijeoma Dike",
+      "email": "ijeoma.dike@example.com",
+      "role": "user",
+      "password": "1234abcd"
+    }
+  ],
+  "notifications": [
+    {
+      "id": "1",
+      "userId": 1,
+      "message": "Welcome to SaaSify, Admin!"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "0d56",
+      "title": "Create Document",
+      "assignedTo": 2,
+      "status": "completed"
+    },
+    {
+      "id": "e44c",
+      "title": "Clear Backlogs",
+      "assignedTo": 5,
+      "status": "pending"
+    },
+    {
+      "id": "23ca",
+      "title": "Upload Documents",
+      "assignedTo": 8,
+      "status": "pending"
+    },
+    {
+      "id": "f5b6",
+      "title": "Review Uploaded Documents",
+      "assignedTo": 11,
+      "status": "pending"
+    },
+    {
+      "id": "83c0",
+      "title": "Test Product",
+      "assignedTo": 3,
+      "status": "in-progress"
+    }
+  ]
+}
