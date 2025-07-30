@@ -4,10 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "serve:api": "json-server --watch db.json --port 3003",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.4",
@@ -35,7 +35,6 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.3.5",
-    "json-server": "^1.0.0-beta.3",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
