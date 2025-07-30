@@ -13,7 +13,7 @@ export default function LoginForm() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const res = await fetch(`http://localhost:3003/users?email=${email}`);
+    const res = await fetch(`/api/users?email=${email}`);
     const users = await res.json();
 
     if (users.length === 0) {
