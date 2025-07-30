@@ -57,7 +57,11 @@ npm install
 yarn
 ```
 
-### 3. Run the mock API server
+### 3. Configure environment variables
+
+Copy `.env.example` to `.env` and ensure `DATABASE_URL="file:./dev.db"` is set.
+
+### 4. Run the mock API server
 
 ```bash
 yarn serve:api (for yarn users)
@@ -66,7 +70,7 @@ yarn serve:api (for yarn users)
 npm serve:api (for npm users)
 ```
 
-### 4. Start the frontend app
+### 5. Start the frontend app
 
 ```bash
 npm run dev (for npm users)
