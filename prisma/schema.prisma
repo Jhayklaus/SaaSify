@@ -1,0 +1,33 @@
+ datasource db {
+   provider = "sqlite"
+   url      = env("DATABASE_URL")
+ }
+ 
+ generator client {
+   provider = "prisma-client-js"
+ }
+ 
+ model User {
+   id           Int            @id
+   name         String
+   email        String         @unique
+   role         String
+   password     String
+   tasks        Task[]
+   notifications Notification[]
+ }
+ 
+ model Task {
+   id         String @id
+   title      String
+   assignedTo Int
+   status     String
+   user       User   @relation(fields: [assignedTo], references: [id])
+ }
+ 
+ model Notification {
+   id      Int    @id
+   userId  Int
+   message String
+   user    User   @relation(fields: [userId], references: [id])
+ }
