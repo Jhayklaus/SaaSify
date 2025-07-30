@@ -1,0 +1,25 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id       Int    @id @default(autoincrement())
+  name     String
+  email    String @unique
+  role     String
+  password String?
+  tasks    Task[]
+}
+
+model Task {
+  id         Int    @id @default(autoincrement())
+  title      String
+  assignedTo Int
+  status     String
+  user       User   @relation(fields: [assignedTo], references: [id])
+}
