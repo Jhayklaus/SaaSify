@@ -10,10 +10,11 @@ export default function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-
+    setLoading(true);
     try {
       const { user } = await login(email, password);
 
@@ -26,6 +27,7 @@ export default function LoginForm() {
       }
     } catch {
       setError('Invalid credentials');
+      setLoading(false);
     }
   };
 
@@ -54,7 +56,9 @@ export default function LoginForm() {
         type="submit"
         className="bg-primary text-white w-full py-2 rounded hover:bg-primary/90"
       >
-        Log In
+        {
+          loading ? 'Logging in...' : 'Log In'
+        }
       </button>
     </form>
   );
