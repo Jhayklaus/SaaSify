@@ -1,7 +1,10 @@
 export const getCurrentUser = () => {
   if (typeof window !== 'undefined') {
-    const user = localStorage.getItem('user');
-    return user ? JSON.parse(user) : null;
+    const auth = localStorage.getItem('auth');
+    if (auth) {
+      const parsed = JSON.parse(auth);
+      return parsed.user;
+    }
   }
   return null;
 };
