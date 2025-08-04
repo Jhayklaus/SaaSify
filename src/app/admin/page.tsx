@@ -11,7 +11,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pi
 
 function StatCard({ icon, title, value }: { icon: React.ReactNode; title: string; value: number }) {
   return (
-    <div className="p-4 border rounded-lg shadow-sm bg-white">
+    <div className="p-4 py-10 shadow rounded-lg bg-white">
       <div className="flex items-center gap-4">
         <div className="text-primary bg-primary/10 p-2 rounded-md">{icon}</div>
         <div>
@@ -36,7 +36,7 @@ function QuickActions() {
         <button
           key={action.label}
           onClick={() => router.push(action.href)}
-          className="p-4 border rounded-lg shadow-sm bg-white hover:bg-gray-50 transition flex flex-col items-center gap-2"
+          className="p-4 shadow rounded-lg bg-white hover:bg-gray-50 transition flex flex-col items-center gap-2"
         >
           <div className="text-primary">{action.icon}</div>
           <span className="text-sm font-medium">{action.label}</span>
@@ -46,7 +46,24 @@ function QuickActions() {
   );
 }
 
-function UsersBarChart({ admin, manager, user }: { admin: number; manager: number; user: number }) {
+
+
+
+const COLORS = {
+  Admin: '#563b91',
+  Manager: '#FF7A30',
+  User: '#5E936C',
+};
+
+function UsersBarChart({
+  admin,
+  manager,
+  user,
+}: {
+  admin: number;
+  manager: number;
+  user: number;
+}) {
   const data = [
     { role: 'Admin', count: admin },
     { role: 'Manager', count: manager },
@@ -60,21 +77,48 @@ function UsersBarChart({ admin, manager, user }: { admin: number; manager: numbe
         <BarChart data={data} margin={{ top: 20, right: 20, left: 0, bottom: 0 }}>
           <XAxis dataKey="role" />
           <YAxis />
-          <Tooltip />
-          <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+          <Tooltip
+            content={({ active, payload }) => {
+              if (!active || !payload?.length) return null;
+              const { role, count } = payload[0].payload;
+              return (
+                <div className="bg-white shadow px-3 py-2 rounded border border-gray-200 text-sm">
+                  <p className="text-gray-700 font-medium">{role}</p>
+                  <p className="text-primary font-semibold">{count} users</p>
+                </div>
+              );
+            }}
+          />
+          <Legend verticalAlign="top" iconType="circle" wrapperStyle={{ fontSize: 12 }} />
+          <Bar dataKey="count" radius={[5, 5, 0, 0]} barSize={60} animationDuration={800}>
+            {data.map((entry, index) => (
+              <Cell key={`cell-${index}`} fill={COLORS[entry.role as keyof typeof COLORS]} />
+            ))}
+          </Bar>
         </BarChart>
       </ResponsiveContainer>
     </div>
   );
 }
 
-function TaskStatusChart({ completed, inProgress, pending }: { completed: number; inProgress: number; pending: number }) {
+
+
+const STATUS_COLORS = ['#563b91', '#7A7A73', '#D25D5D'];
+
+function TaskStatusChart({
+  completed,
+  inProgress,
+  pending,
+}: {
+  completed: number;
+  inProgress: number;
+  pending: number;
+}) {
   const data = [
     { name: 'Completed', value: completed },
     { name: 'In Progress', value: inProgress },
     { name: 'Pending', value: pending },
   ];
-  const COLORS = ['#22c55e', '#3b82f6', '#eab308'];
 
   return (
     <div className="bg-white rounded-lg shadow-sm p-4">
@@ -87,17 +131,47 @@ function TaskStatusChart({ completed, inProgress, pending }: { completed: number
             cy="50%"
             innerRadius={50}
             outerRadius={80}
-            fill="#8884d8"
             paddingAngle={5}
             dataKey="value"
-            label
+            label={({ cx = 0, cy = 0, midAngle = 0, innerRadius = 0, outerRadius = 0, percent = 0, payload }) => {
+              const RADIAN = Math.PI / 180;
+              const radius = 12 + innerRadius + (outerRadius - innerRadius);
+              const x = cx + radius * Math.cos(-midAngle * RADIAN);
+              const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+              return (
+                <text
+                  x={x}
+                  y={y}
+                  fill="#333"
+                  textAnchor={x > cx ? 'start' : 'end'}
+                  dominantBaseline="central"
+                  fontSize={12}
+                >
+                  {`${payload?.name ?? 'Unknown'}: ${(percent * 100).toFixed(0)}%`}
+                </text>
+              );
+            }}
+
+
           >
-            {data.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+            {data.map((_, index) => (
+              <Cell key={`cell-${index}`} fill={STATUS_COLORS[index % STATUS_COLORS.length]} />
             ))}
           </Pie>
-          <Tooltip />
-          <Legend verticalAlign="bottom" height={36} />
+          <Tooltip
+            content={({ active, payload }) => {
+              if (!active || !payload?.length) return null;
+              const { name, value } = payload[0].payload;
+              return (
+                <div className="bg-white shadow px-3 py-2 rounded border border-gray-200 text-sm">
+                  <p className="text-gray-700 font-medium">{name}</p>
+                  <p className="text-primary font-semibold">{value} tasks</p>
+                </div>
+              );
+            }}
+          />
+          <Legend verticalAlign="bottom" iconType="circle" wrapperStyle={{ fontSize: 12 }} />
         </PieChart>
       </ResponsiveContainer>
     </div>
@@ -125,7 +199,7 @@ function AdminDashboard() {
       <h2 className="text-2xl font-bold mb-6">Admin Dashboard</h2>
 
       {isLoading && <LoadingSpinner />}
-      {isError && <ErrorState message="Error while fetching users or tasks." />}
+      {isError && <ErrorState type='error' message="Error while fetching data" />}
 
       {!isLoading && !isError && (
         <>

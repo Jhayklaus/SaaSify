@@ -7,9 +7,10 @@ import AdminLayout from '@/components/layout/AdminLayout';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { SelectFilter } from '@/components/ui/SelectFilter';
+import { SquarePenIcon, Trash2Icon } from 'lucide-react';
 
 
-const USERS_PER_PAGE = 6;
+const USERS_PER_PAGE = 10;
 
 export default function AdminUsersPage() {
     const { data: users, isLoading, isError } = useUsers();
@@ -69,9 +70,9 @@ export default function AdminUsersPage() {
             {isError && <ErrorState message="Error while fetching users." />}
 
             {paginatedUsers.length > 0 ? (
-                <div className="border rounded-lg overflow-hidden">
+                <div className="rounded overflow-hidden bg-white shadow">
                     <table className="w-full text-sm">
-                        <thead className="bg-gray-100">
+                        <thead className="bg-gray-200">
                             <tr>
                                 <th className="text-left p-3">Name</th>
                                 <th className="text-left p-3">Email</th>
@@ -81,17 +82,12 @@ export default function AdminUsersPage() {
                         </thead>
                         <tbody>
                             {paginatedUsers.map((user) => (
-                                <tr key={user.id} className="border-t hover:bg-gray-50">
+                                <tr key={user.id} className="border-t border-gray-200 hover:bg-gray-50">
                                     <td className="p-3">{user.name}</td>
                                     <td className="p-3">{user.email}</td>
                                     <td className="p-3 capitalize">{user.role}</td>
                                     <td className="p-3 flex gap-2">
-                                        <button
-                                            onClick={() => deleteUser.mutate(user.id)}
-                                            className="text-sm text-red-500 hover:underline"
-                                        >
-                                            Delete
-                                        </button>
+
                                         <button
                                             onClick={() =>
                                                 setEditingUser({
@@ -101,11 +97,16 @@ export default function AdminUsersPage() {
                                                     role: user.role,
                                                 })
                                             }
-                                            className="text-sm text-blue-500 hover:underline"
+                                            className="text-sm text-primary hover:underline"
                                         >
-                                            Edit
+                                            <SquarePenIcon className="inline w-4 h-4" />
                                         </button>
-
+                                        <button
+                                            onClick={() => deleteUser.mutate(user.id)}
+                                            className="text-sm text-red-500 hover:underline"
+                                        >
+                                            <Trash2Icon className="inline w-4 h-4" />
+                                        </button>
                                     </td>
                                 </tr>
                             ))}

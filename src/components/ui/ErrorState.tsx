@@ -2,21 +2,37 @@
 
 import { motion } from 'framer-motion';
 import { AlertTriangle } from 'lucide-react';
+import Image from 'next/image';
+
 
 interface ErrorStateProps {
   message?: string;
+  type?: 'error' | 'warning' | 'info';
   retry?: () => void;
 }
 
-export const ErrorState = ({ message = 'Something went wrong.', retry }: ErrorStateProps) => {
+export const ErrorState = ({ message = 'Something went wrong.', retry, type }: ErrorStateProps) => {
   return (
     <motion.div
-      className="flex flex-col items-center justify-center py-12 text-center"
+      className="flex flex-col items-center justify-center py-12 text-center h-[69vh] bg-white shadow rounded-lg"
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
-      <AlertTriangle className="w-10 h-10 text-red-500 mb-4 animate-bounce" />
+      {
+        type === 'error' ? (
+          <AlertTriangle className="w-10 h-10 text-red-500 mb-4" />
+        ) : type === 'warning' ? (
+          <AlertTriangle className="w-10 h-10 text-yellow-500 mb-4" />
+        ) : (
+          <Image
+            src="/icons/no-results.png"
+            alt="Error"
+            width={80}
+            height={80}
+            className="mb-4" />
+        )
+      }
       <p className="text-lg font-semibold text-gray-700">{message}</p>
 
       {retry && (
