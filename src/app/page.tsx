@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useLogin } from '@/lib/hooks/useLogin';
 
 export default function LoginForm() {
@@ -60,6 +61,12 @@ export default function LoginForm() {
           loading ? 'Logging in...' : 'Log In'
         }
       </button>
+      <p className="text-sm text-center">
+        Don't have an account?{' '}
+        <Link href="/register" className="text-primary hover:underline">
+          Sign up
+        </Link>
+      </p>
     </form>
   );
 }
