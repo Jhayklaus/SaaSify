@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import bcrypt from 'bcrypt';
 
 const ROLES = ['admin', 'manager', 'user'] as const;
 // type Role = typeof ROLES[number];
@@ -11,6 +12,12 @@ export async function GET(request: Request) {
   try {
     const users = await prisma.user.findMany({
       where: email ? { email } : undefined,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+      },
     });
 
     return NextResponse.json(users, { status: 200 });
@@ -44,12 +51,20 @@ export async function POST(request: Request) {
       );
     }
 
+    const hashedPassword = password ? await bcrypt.hash(password, 10) : undefined;
+
     const user = await prisma.user.create({
       data: {
         name,
         email,
         role,
-        password, // optional
+        password: hashedPassword, // optional
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
       },
     });
 
