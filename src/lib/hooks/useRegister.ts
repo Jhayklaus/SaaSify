@@ -10,17 +10,28 @@ interface User {
   organizationId: number;
 }
 
-interface LoginResponse {
+interface RegisterResponse {
   user: User;
   token: string;
 }
 
-export const useLogin = () => {
+export const useRegister = () => {
   const authLogin = useAuthStore((state) => state.login);
 
-  const login = async (email: string, password: string) => {
-    const { data } = await axios.post<LoginResponse>('/api/auth/login', {
+  const register = async (
+    userName: string,
+    organizationName: string,
+    sector: string,
+    email: string,
+    phone: string,
+    password: string,
+  ) => {
+    const { data } = await axios.post<RegisterResponse>('/api/auth/register', {
+      userName,
+      organizationName,
+      sector,
       email,
+      phone,
       password,
     });
 
@@ -28,5 +39,5 @@ export const useLogin = () => {
     return data;
   };
 
-  return { login };
+  return { register };
 };

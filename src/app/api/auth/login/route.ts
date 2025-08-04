@@ -18,7 +18,7 @@ export async function POST(request: Request) {
     // 2️⃣ Explicitly fetch the hashed password
     const user = await prisma.user.findUnique({
       where: { email: normalisedEmail },
-      select: { id: true, email: true, role: true, password: true }, // ⬅️ crucial
+      select: { id: true, email: true, role: true, password: true, organizationId: true },
     });
 
     if (!user) {
@@ -33,13 +33,19 @@ export async function POST(request: Request) {
 
     // 4️⃣ Issue the token
     const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role },
+      {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        organizationId: user.organizationId,
+      },
       process.env.JWT_SECRET!, // make sure this is set in production
       { expiresIn: '1h' }
     );
 
     // 5️⃣ Never return the hash
-    const { ...safeUser } = user; 
+    const { password: passwordHash, ...safeUser } = user;
+    void passwordHash;
     return NextResponse.json({ user: safeUser, token, password: null }, { status: 200 });
   } catch (err) {
     console.error('LOGIN_ERROR', err);

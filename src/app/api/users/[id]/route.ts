@@ -20,6 +20,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         name: true,
         email: true,
         role: true,
+        organizationId: true,
       },
     });
     return NextResponse.json(user, { status: 200 });
