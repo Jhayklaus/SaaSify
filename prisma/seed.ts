@@ -1,5 +1,6 @@
 // prisma/seed.ts
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
@@ -27,17 +28,32 @@ async function main() {
     prisma.user.upsert({
       where: { email: 'alice@example.com' },
       update: {},
-      create: { name: 'Alice', email: 'alice@example.com', role: 'admin', password: 'password123' },
+      create: {
+        name: 'Alice',
+        email: 'alice@example.com',
+        role: 'admin',
+        password: await bcrypt.hash('password123', 10),
+      },
     }),
     prisma.user.upsert({
       where: { email: 'bob@example.com' },
       update: {},
-      create: { name: 'Bob', email: 'bob@example.com', role: 'manager', password: 'password123' },
+      create: {
+        name: 'Bob',
+        email: 'bob@example.com',
+        role: 'manager',
+        password: await bcrypt.hash('password123', 10),
+      },
     }),
     prisma.user.upsert({
       where: { email: 'charlie@example.com' },
       update: {},
-      create: { name: 'Charlie', email: 'charlie@example.com', role: 'user', password: 'password123' },
+      create: {
+        name: 'Charlie',
+        email: 'charlie@example.com',
+        role: 'user',
+        password: await bcrypt.hash('password123', 10),
+      },
     }),
   ]);
 
@@ -49,7 +65,7 @@ async function main() {
           name: generateRandomName(i + 4),
           email: generateEmail(i + 4),
           role: generateRole(),
-          password: 'password123',
+          password: await bcrypt.hash('password123', 10),
         },
       })
     )

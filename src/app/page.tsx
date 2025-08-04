@@ -13,19 +13,18 @@ export default function LoginForm() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const res = await fetch(`/api/users?email=${email}`);
-    const users = await res.json();
+    const res = await fetch('/api/users/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
 
-    if (users.length === 0) {
+    if (!res.ok) {
       setError('Invalid credentials');
       return;
     }
 
-    const user = users[0];
-    if (user.password !== password) {
-      setError('Invalid credentials');
-      return;
-    }
+    const user = await res.json();
 
     useAuthStore.getState().login(user);
 
