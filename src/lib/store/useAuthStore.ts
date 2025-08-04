@@ -11,33 +11,35 @@ interface User {
 
 interface AuthState {
   user: User | null;
+  token: string | null;
   isInitialized: boolean;
   init: () => void;
-  login: (user: User) => void;
+  login: (user: User, token: string) => void;
   logout: () => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
+  token: null,
   isInitialized: false,
 
   init: () => {
-    const stored = localStorage.getItem('user');
+    const stored = localStorage.getItem('auth');
     if (stored) {
       const parsed = JSON.parse(stored);
-      set({ user: parsed, isInitialized: true });
+      set({ user: parsed.user, token: parsed.token, isInitialized: true });
     } else {
-      set({ user: null, isInitialized: true });
+      set({ user: null, token: null, isInitialized: true });
     }
   },
 
-  login: (user) => {
-    localStorage.setItem('user', JSON.stringify(user));
-    set({ user });
+  login: (user, token) => {
+    localStorage.setItem('auth', JSON.stringify({ user, token }));
+    set({ user, token });
   },
 
   logout: () => {
-    localStorage.removeItem('user');
-    set({ user: null });
+    localStorage.removeItem('auth');
+    set({ user: null, token: null });
   },
 }));

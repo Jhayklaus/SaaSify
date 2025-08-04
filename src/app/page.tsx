@@ -2,10 +2,11 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuthStore } from '@/lib/store/useAuthStore';
+import { useLogin } from '@/lib/hooks/useLogin';
 
 export default function LoginForm() {
   const router = useRouter();
+  const { login } = useLogin();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -13,27 +14,18 @@ export default function LoginForm() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const res = await fetch('/api/users/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    });
+    try {
+      const { user } = await login(email, password);
 
-    if (!res.ok) {
+      if (user.role === 'admin') {
+        router.push('/admin');
+      } else if (user.role === 'manager') {
+        router.push('/manager');
+      } else {
+        router.push('/dashboard');
+      }
+    } catch {
       setError('Invalid credentials');
-      return;
-    }
-
-    const user = await res.json();
-
-    useAuthStore.getState().login(user);
-
-    if (user.role === 'admin') {
-      router.push('/admin');
-    } else if (user.role === 'manager') {
-      router.push('/manager');
-    } else {
-      router.push('/dashboard');
     }
   };
 
