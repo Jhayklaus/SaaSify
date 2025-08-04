@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
-  const id = Number(params.id);
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id: idParam } = await params;
+  const id = Number(idParam);
+  
   try {
     const task = await prisma.task.findUnique({ where: { id } });
     if (!task) {
@@ -15,9 +17,11 @@ export async function GET(request: Request, { params }: { params: { id: string }
   }
 }
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
-  const id = Number(params.id);
+export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id: idParam } = await params;
+  const id = Number(idParam);
   const data = await request.json();
+  
   try {
     const task = await prisma.task.update({ where: { id }, data });
     return NextResponse.json(task, { status: 200 });
@@ -27,8 +31,10 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
-  const id = Number(params.id);
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id: idParam } = await params;
+  const id = Number(idParam);
+  
   try {
     await prisma.task.delete({ where: { id } });
     return NextResponse.json({ message: 'Task deleted' }, { status: 200 });
