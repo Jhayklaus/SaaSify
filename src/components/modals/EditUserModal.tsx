@@ -1,6 +1,6 @@
 'use client';
 
-import { Dialog } from '@headlessui/react';
+import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react';
 import { useForm } from 'react-hook-form';
 import { useUpdateUser } from '@/lib/hooks/useUsers';
 import { useEffect } from 'react';
@@ -44,8 +44,8 @@ export function EditUserModal({ isOpen, onClose, defaultValues }: Props) {
     <Dialog open={isOpen} onClose={onClose} className="relative z-50">
       <div className="fixed inset-0 bg-black/20" aria-hidden="true" />
       <div className="fixed inset-0 flex items-center justify-center p-4">
-        <Dialog.Panel className="bg-white w-full max-w-md rounded-lg p-6 shadow-xl">
-          <Dialog.Title className="text-lg font-bold mb-4">Edit User</Dialog.Title>
+        <DialogPanel className="bg-white w-full max-w-md rounded-lg p-6 shadow-xl">
+          <DialogTitle className="text-lg font-bold mb-4">Edit User</DialogTitle>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div>
@@ -86,13 +86,13 @@ export function EditUserModal({ isOpen, onClose, defaultValues }: Props) {
               </button>
               <button
                 type="submit"
-                className="text-sm px-4 py-2 rounded bg-blue-600 text-white"
+                className="text-sm px-4 py-2 rounded bg-primary text-white"
               >
                 Save
               </button>
             </div>
           </form>
-        </Dialog.Panel>
+        </DialogPanel>
       </div>
     </Dialog>
   );

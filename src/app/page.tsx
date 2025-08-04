@@ -13,7 +13,7 @@ export default function LoginForm() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const res = await fetch(`http://localhost:3003/users?email=${email}`);
+    const res = await fetch(`/api/users?email=${email}`);
     const users = await res.json();
 
     if (users.length === 0) {
@@ -61,7 +61,7 @@ export default function LoginForm() {
       {error && <p className="text-red-500 text-sm">{error}</p>}
       <button
         type="submit"
-        className="bg-blue-600 text-white w-full py-2 rounded hover:bg-blue-700"
+        className="bg-primary text-white w-full py-2 rounded hover:bg-primary/90"
       >
         Log In
       </button>
