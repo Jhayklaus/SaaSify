@@ -28,7 +28,7 @@ export function Sidebar() {
   };
 
   return (
-    <aside className="w-64 h-screen bg-background border-r p-4 hidden md:block">
+    <aside className="w-64 h-screen bg-background shadow p-4 hidden md:block fixed">
       <h2 className="text-lg font-bold mb-6 text-primary">SaaSify</h2>
       <nav className="space-y-3">
         {links.map(({ href, label, icon: Icon }) => (
@@ -36,8 +36,8 @@ export function Sidebar() {
             key={href}
             href={href}
             className={clsx(
-              'flex items-center gap-3 px-3 py-2 rounded-md hover:bg-secondary/90 hover:text-white transition',
-              pathname === href && 'bg-secondary text-white font-semibold'
+              'flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-100 transition text-sm',
+              pathname === href && 'bg-secondary text-primary font-semibold hover:bg-secondary/80'
             )}
           >
             <Icon className="w-5 h-5" />
