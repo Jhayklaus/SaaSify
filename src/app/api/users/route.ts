@@ -8,15 +8,22 @@ const ROLES = ['admin', 'manager', 'user'] as const;
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const email = searchParams.get('email') ?? undefined;
+  const organizationId = searchParams.get('organizationId')
+    ? Number(searchParams.get('organizationId'))
+    : undefined;
 
   try {
     const users = await prisma.user.findMany({
-      where: email ? { email } : undefined,
+      where: {
+        ...(email ? { email } : {}),
+        ...(organizationId ? { organizationId } : {}),
+      },
       select: {
         id: true,
         name: true,
         email: true,
         role: true,
+        organizationId: true,
       },
     });
 
@@ -35,11 +42,11 @@ export async function POST(request: Request) {
     const data = await request.json();
 
     // Basic validation
-    const { name, email, role, password } = data;
+    const { name, email, role, password, organizationId } = data;
 
-    if (!name || !email || !role) {
+    if (!name || !email || !role || !organizationId) {
       return NextResponse.json(
-        { error: 'Name, email, and role are required' },
+        { error: 'Name, email, role, and organizationId are required' },
         { status: 400 }
       );
     }
@@ -59,12 +66,14 @@ export async function POST(request: Request) {
         email,
         role,
         password: hashedPassword, // optional
+        organizationId,
       },
       select: {
         id: true,
         name: true,
         email: true,
         role: true,
+        organizationId: true,
       },
     });
 

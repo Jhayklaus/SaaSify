@@ -3,10 +3,11 @@ import { useAuthStore } from '@/lib/store/useAuthStore';
 import type { Role } from '@/lib/store/useAuthStore';
 
 interface User {
-  id: string;
+  id: number;
   name: string;
   email: string;
   role: Role;
+  organizationId: number;
 }
 
 interface LoginResponse {

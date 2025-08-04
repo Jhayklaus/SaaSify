@@ -13,7 +13,10 @@ export async function POST(request: Request) {
       );
     }
 
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await prisma.user.findUnique({
+      where: { email },
+      select: { id: true, name: true, email: true, role: true, password: true, organizationId: true },
+    });
 
     if (!user || !user.password) {
       return NextResponse.json(
@@ -31,7 +34,8 @@ export async function POST(request: Request) {
       );
     }
 
-    const { password: _pw, ...safeUser } = user;
+    const { password: passwordHash, ...safeUser } = user;
+    void passwordHash;
 
     return NextResponse.json(safeUser, { status: 200 });
   } catch (err) {
