@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetcher } from '../api/fetcher';
+import { useAuthStore } from '@/lib/store/useAuthStore';
 
 export interface Task {
   id: number;
@@ -9,12 +10,16 @@ export interface Task {
 }
 
 export const useTasks = () => {
+  const organizationId = useAuthStore((s) => s.user?.organizationId);
   return useQuery<Task[]>({
-    queryKey: ['tasks'],
+    queryKey: ['tasks', organizationId],
     queryFn: async () => {
-      const response = await fetcher.get('/tasks');
+      const response = await fetcher.get('/tasks', {
+        params: { organizationId },
+      });
       return response.data;
     },
+    enabled: !!organizationId,
   });
 };
 

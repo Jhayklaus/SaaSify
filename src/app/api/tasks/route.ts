@@ -1,9 +1,18 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const organizationId = searchParams.get('organizationId')
+    ? Number(searchParams.get('organizationId'))
+    : undefined;
+
   try {
-    const tasks = await prisma.task.findMany();
+    const tasks = await prisma.task.findMany({
+      where: {
+        ...(organizationId ? { user: { organizationId } } : {}),
+      },
+    });
     return NextResponse.json(tasks, { status: 200 });
   } catch (err) {
     console.error(err);
