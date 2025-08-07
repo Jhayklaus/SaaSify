@@ -49,6 +49,14 @@ export async function POST(request: Request) {
         organizationId: true,
       },
     });
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) {
+      console.error('JWT_SECRET is not set');
+      return NextResponse.json(
+        { error: 'JWT secret not configured' },
+        { status: 500 }
+      );
+    }
 
     const token = jwt.sign(
       {
@@ -57,7 +65,7 @@ export async function POST(request: Request) {
         role: user.role,
         organizationId: user.organizationId,
       },
-      process.env.JWT_SECRET!,
+      jwtSecret,
       { expiresIn: '1h' }
     );
 

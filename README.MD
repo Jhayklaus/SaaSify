@@ -59,7 +59,12 @@ yarn
 
 ### 3. Configure environment variables
 
-Copy `.env.example` to `.env` and ensure `DATABASE_URL="file:./dev.db"` is set.
+Copy `.env.example` to `.env` and set the required variables:
+
+```
+DATABASE_URL="file:./dev.db"
+JWT_SECRET="your_jwt_secret"
+```
 
 ### 4. Run the mock API server
 
