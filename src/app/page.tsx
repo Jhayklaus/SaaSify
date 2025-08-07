@@ -62,7 +62,7 @@ export default function LoginForm() {
         }
       </button>
       <p className="text-sm text-center">
-        Don't have an account?{' '}
+        Don&apos;t have an account?{' '}
         <Link href="/register" className="text-primary hover:underline">
           Sign up
         </Link>
