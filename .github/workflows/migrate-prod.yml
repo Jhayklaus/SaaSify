@@ -1,0 +1,32 @@
+name: Migrate DB (prod)
+on:
+  workflow_dispatch: {}        # run manually when needed
+  push:
+    branches: [ main ]
+    paths:
+      - 'prisma/**'
+
+concurrency:
+  group: migrations-prod        # avoid parallel runs
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: corepack enable
+      - run: yarn install --frozen-lockfile
+      - name: Prisma migrate (deploy)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}   # pooled
+          # DIRECT_URL:   ${{ secrets.DIRECT_URL }}     # direct (no pgbouncer)
+        run: npx prisma migrate deploy --schema=./prisma/schema.prisma
+      # - name: (Optional) seed
+      #   if: ${{ vars.RUN_SEED == 'true' }}
+      #   env:
+      #     DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      #   run: npx prisma db seed --schema=./prisma/schema.prisma
