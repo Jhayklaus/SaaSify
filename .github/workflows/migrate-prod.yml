@@ -1,18 +1,22 @@
 name: Migrate DB (prod)
+
 on:
-  workflow_dispatch: {}        # run manually when needed
+  workflow_dispatch: {}         # run manually
   push:
     branches: [ main ]
     paths:
       - 'prisma/**'
 
-concurrency:
-  group: migrations-prod        # avoid parallel runs
-  cancel-in-progress: false
-
 jobs:
   migrate:
     runs-on: ubuntu-latest
+    # If you saved secrets under an Environment, uncomment the next line and match the env name
+    # environment: production
+
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DIRECT_URL:   ${{ secrets.DIRECT_URL }}
+
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -20,13 +24,15 @@ jobs:
           node-version: 20
       - run: corepack enable
       - run: yarn install --frozen-lockfile
-      - name: Prisma migrate (deploy)
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}   # pooled
-          # DIRECT_URL:   ${{ secrets.DIRECT_URL }}     # direct (no pgbouncer)
+
+      # Preflight: fail early if a secret is missing (without printing it)
+      - name: Verify secrets present
+        run: |
+          [ -n "${DATABASE_URL:-}" ] || (echo "::error::DATABASE_URL is missing"; exit 1)
+
+      - name: Prisma migrate deploy
         run: npx prisma migrate deploy --schema=./prisma/schema.prisma
-      # - name: (Optional) seed
-      #   if: ${{ vars.RUN_SEED == 'true' }}
-      #   env:
-      #     DATABASE_URL: ${{ secrets.DATABASE_URL }}
-      #   run: npx prisma db seed --schema=./prisma/schema.prisma
+
+      - name: (Optional) Seed
+        if: ${{ vars.RUN_SEED == 'true' }}
+        run: npx prisma db seed --schema=./prisma/schema.prisma
