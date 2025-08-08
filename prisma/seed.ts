@@ -1,5 +1,6 @@
 // prisma/seed.ts
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
@@ -8,7 +9,8 @@ const randomInt = (min: number, max: number) =>
 
 const generateRandomName = (i: number) => `User${i}`;
 const generateEmail = (i: number) => `user${i}@example.com`;
-const generateRole = () => (Math.random() > 0.5 ? 'manager' : 'user') as 'manager' | 'user';
+const generateRole = () =>
+  (Math.random() > 0.5 ? 'manager' : 'user') as 'manager' | 'user';
 const generateStatus = () => {
   const statuses = ['pending', 'in-progress', 'completed'];
   return statuses[randomInt(0, statuses.length - 1)];
@@ -22,34 +24,63 @@ async function main() {
 
   console.log('🌱 Starting seed...');
 
+  // Step 0: Ensure a demo organization exists
+  await prisma.organization.deleteMany();
+  const organization = await prisma.organization.create({
+    data: {
+      name: 'Demo Org',
+      sector: 'General',
+      phone: '1234567890',
+    },
+  });
+
   // Step 1: Base users (Admin, Manager, User)
   const baseUsers = await Promise.all([
     prisma.user.upsert({
       where: { email: 'alice@example.com' },
       update: {},
-      create: { name: 'Alice', email: 'alice@example.com', role: 'admin', password: 'password123' },
+      create: {
+        name: 'Alice',
+        email: 'alice@example.com',
+        role: 'admin',
+        password: await bcrypt.hash('password123', 10),
+        organization: { connect: { id: organization.id } },
+      },
     }),
     prisma.user.upsert({
       where: { email: 'bob@example.com' },
       update: {},
-      create: { name: 'Bob', email: 'bob@example.com', role: 'manager', password: 'password123' },
+      create: {
+        name: 'Bob',
+        email: 'bob@example.com',
+        role: 'manager',
+        password: await bcrypt.hash('password123', 10),
+        organization: { connect: { id: organization.id } },
+      },
     }),
     prisma.user.upsert({
       where: { email: 'charlie@example.com' },
       update: {},
-      create: { name: 'Charlie', email: 'charlie@example.com', role: 'user', password: 'password123' },
+      create: {
+        name: 'Charlie',
+        email: 'charlie@example.com',
+        role: 'user',
+        password: await bcrypt.hash('password123', 10),
+        organization: { connect: { id: organization.id } },
+      },
     }),
   ]);
 
   // Step 2: Add 50 more users (random manager/user, no admins)
   const extraUsers = await Promise.all(
-    Array.from({ length: 50 }).map((_, i) =>
+    Array.from({ length: 50 }).map(async (_, i) =>
       prisma.user.create({
         data: {
           name: generateRandomName(i + 4),
           email: generateEmail(i + 4),
           role: generateRole(),
-          password: 'password123',
+          password: await bcrypt.hash('password123', 10),
+          organization: { connect: { id: organization.id } },
         },
       })
     )

@@ -7,14 +7,26 @@ datasource db {
   provider = "sqlite"
   url      = env("DATABASE_URL")
 }
-model User {
-  id       Int    @id @default(autoincrement())
-  name     String
-  email    String @unique
-  role     String
-  password String?
-  tasks    Task[]
+
+model Organization {
+  id    Int    @id @default(autoincrement())
+  name  String
+  sector String
+  phone String?
+  users User[]
 }
+
+model User {
+  id             Int    @id @default(autoincrement())
+  name           String
+  email          String @unique
+  role           String
+  password       String?
+  organizationId Int
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  tasks          Task[]
+}
+
 model Task {
   id         Int    @id @default(autoincrement())
   title      String

@@ -2,39 +2,33 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuthStore } from '@/lib/store/useAuthStore';
+import Link from 'next/link';
+import { useLogin } from '@/lib/hooks/useLogin';
 
 export default function LoginForm() {
   const router = useRouter();
+  const { login } = useLogin();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
+    try {
+      const { user } = await login(email, password);
 
-    const res = await fetch(`/api/users?email=${email}`);
-    const users = await res.json();
-
-    if (users.length === 0) {
+      if (user.role === 'admin') {
+        router.push('/admin');
+      } else if (user.role === 'manager') {
+        router.push('/manager');
+      } else {
+        router.push('/dashboard');
+      }
+    } catch {
       setError('Invalid credentials');
-      return;
-    }
-
-    const user = users[0];
-    if (user.password !== password) {
-      setError('Invalid credentials');
-      return;
-    }
-
-    useAuthStore.getState().login(user);
-
-    if (user.role === 'admin') {
-      router.push('/admin');
-    } else if (user.role === 'manager') {
-      router.push('/manager');
-    } else {
-      router.push('/dashboard');
+      setLoading(false);
     }
   };
 
@@ -63,8 +57,16 @@ export default function LoginForm() {
         type="submit"
         className="bg-primary text-white w-full py-2 rounded hover:bg-primary/90"
       >
-        Log In
+        {
+          loading ? 'Logging in...' : 'Log In'
+        }
       </button>
+      <p className="text-sm text-center">
+        Don&apos;t have an account?{' '}
+        <Link href="/register" className="text-primary hover:underline">
+          Sign up
+        </Link>
+      </p>
     </form>
   );
 }
