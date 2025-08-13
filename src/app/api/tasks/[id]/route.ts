@@ -35,7 +35,10 @@ export async function GET(
     return NextResponse.json(task, { status: 200 });
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ error: 'Failed to fetch task' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to fetch task' },
+      { status: 500 }
+    );
   }
 }
 
@@ -61,11 +64,28 @@ export async function PUT(
   }
 
   try {
-    const task = await prisma.task.update({ where: { id: id.data }, data: data.data });
+    const task = await prisma.task.update({
+      where: { id: id.data },
+      data: data.data,
+    });
+
+    // Log status change in activity log
+    if (data.data.status) {
+      await prisma.activityLog.create({
+        data: {
+          taskId: task.id.toString(),
+          action: `STATUS_CHANGED: ${data.data.status}`,
+        },
+      });
+    }
+
     return NextResponse.json(task, { status: 200 });
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ error: 'Failed to update task' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to update task' },
+      { status: 500 }
+    );
   }
 }
 
@@ -87,6 +107,9 @@ export async function DELETE(
     return NextResponse.json({ message: 'Task deleted' }, { status: 200 });
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ error: 'Failed to delete task' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to delete task' },
+      { status: 500 }
+    );
   }
 }
