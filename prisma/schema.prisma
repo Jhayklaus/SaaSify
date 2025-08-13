@@ -1,4 +1,3 @@
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,29 +7,83 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Role {
+  ADMIN
+  MANAGER
+  USER
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
 model Organization {
-  id    Int    @id @default(autoincrement())
+  id    String @id @default(cuid())
   name  String
   sector String
   phone String?
   users User[]
+  tasks Task[]
 }
 
 model User {
-  id             Int    @id @default(autoincrement())
-  name           String
-  email          String @unique
-  role           String
-  password       String?
-  organizationId Int
-  organization   Organization @relation(fields: [organizationId], references: [id])
-  tasks          Task[]
+  id           String @id @default(cuid())
+  name         String
+  email        String @unique
+  role         Role   @default(USER)
+  password     String?
+  organizationId String
+  organization Organization @relation(fields: [organizationId], references: [id])
+  assignedTasks Task[] @relation("AssignedTasks")
+  createdTasks  Task[] @relation("CreatedTasks")
+  profile       Profile?
+  activityLogs  ActivityLog[]
 }
 
 model Task {
-  id         Int    @id @default(autoincrement())
-  title      String
-  assignedTo Int
-  status     String
-  user       User   @relation(fields: [assignedTo], references: [id])
+  id             String @id @default(cuid())
+  title          String
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  assigneeId     String?
+  assignee       User? @relation("AssignedTasks", fields: [assigneeId], references: [id])
+  createdById    String
+  createdBy      User   @relation("CreatedTasks", fields: [createdById], references: [id])
+  status         TaskStatus @default(PENDING)
+  priority       TaskPriority @default(MEDIUM)
+  attachments    Attachment[]
+  activityLogs   ActivityLog[]
 }
+
+model Profile {
+  id     String @id @default(cuid())
+  userId String @unique
+  bio    String?
+  user   User   @relation(fields: [userId], references: [id])
+}
+
+model Attachment {
+  id     String @id @default(cuid())
+  taskId String
+  url    String
+  task   Task   @relation(fields: [taskId], references: [id])
+}
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  taskId    String
+  userId    String?
+  action    String
+  createdAt DateTime @default(now())
+  task      Task     @relation(fields: [taskId], references: [id])
+  user      User?    @relation(fields: [userId], references: [id])
+}
+
