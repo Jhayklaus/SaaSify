@@ -2,6 +2,7 @@
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState } from 'react';
+import { ToastProvider } from '@/components/ui/ToastProvider';
 
 
 export function Providers({ children }: { children: React.ReactNode }) {
@@ -10,6 +11,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       {children}
+      <ToastProvider />
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   );
