@@ -1,8 +1,29 @@
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
 import prisma from '@/lib/prisma';
 import { withAuth, AuthRequest } from '@/middleware/withAuth';
 
+const getTasksQuerySchema = z.object({
+  organizationId: z.coerce.number().int().optional(),
+});
+
+const createTaskSchema = z.object({
+  title: z.string().min(1, 'Title is required'),
+  userId: z.string().optional(), // will be set for normal users automatically
+  status: z.string().min(1, 'Status is required'),
+});
+
 export const GET = withAuth(async (request: AuthRequest) => {
+  const query = getTasksQuerySchema.safeParse(
+    Object.fromEntries(new URL(request.url).searchParams)
+  );
+  if (!query.success) {
+    return NextResponse.json(
+      { error: query.error.issues.map((i) => i.message).join(', ') },
+      { status: 400 }
+    );
+  }
+
   try {
     const { user } = request;
     const where =
@@ -13,14 +34,25 @@ export const GET = withAuth(async (request: AuthRequest) => {
     return NextResponse.json(tasks, { status: 200 });
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ error: 'Failed to fetch tasks' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to fetch tasks' },
+      { status: 500 }
+    );
   }
 });
 
 export const POST = withAuth(async (request: AuthRequest) => {
+  const body = createTaskSchema.safeParse(await request.json());
+  if (!body.success) {
+    return NextResponse.json(
+      { error: body.error.issues.map((i) => i.message).join(', ') },
+      { status: 400 }
+    );
+  }
+
   try {
-    const data = await request.json();
     const { user } = request;
+    const data = body.data;
 
     if (user.role === 'user') {
       data.userId = user.id;
@@ -44,7 +76,9 @@ export const POST = withAuth(async (request: AuthRequest) => {
     return NextResponse.json(task, { status: 201 });
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ error: 'Failed to create task' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to create task' },
+      { status: 500 }
+    );
   }
 });
-

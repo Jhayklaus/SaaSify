@@ -1,17 +1,24 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import bcrypt from 'bcrypt';
+import { z } from 'zod';
+
+const loginSchema = z.object({
+  email: z.string().email(),
+  password: z.string(),
+});
 
 export async function POST(request: Request) {
   try {
-    const { email, password } = await request.json();
-
-    if (!email || !password) {
+    const parsed = loginSchema.safeParse(await request.json());
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'Email and password are required' },
+        { error: parsed.error.issues.map((i) => i.message).join(', ') },
         { status: 400 }
       );
     }
+
+    const { email, password } = parsed.data;
 
     const user = await prisma.user.findUnique({
       where: { email },
