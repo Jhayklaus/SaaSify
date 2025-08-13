@@ -1,18 +1,19 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import prisma from '@/lib/prisma';
+import { withAuth, AuthRequest } from '@/middleware/withAuth';
 
 const getTasksQuerySchema = z.object({
   organizationId: z.coerce.number().int().optional(),
 });
 
 const createTaskSchema = z.object({
-  title: z.string(),
-  assignedTo: z.number().int(),
-  status: z.string(),
+  title: z.string().min(1, 'Title is required'),
+  userId: z.string().optional(), // will be set for normal users automatically
+  status: z.string().min(1, 'Status is required'),
 });
 
-export async function GET(request: Request) {
+export const GET = withAuth(async (request: AuthRequest) => {
   const query = getTasksQuerySchema.safeParse(
     Object.fromEntries(new URL(request.url).searchParams)
   );
@@ -23,22 +24,24 @@ export async function GET(request: Request) {
     );
   }
 
-  const { organizationId } = query.data;
-
   try {
-    const tasks = await prisma.task.findMany({
-      where: {
-        ...(organizationId ? { user: { organizationId } } : {}),
-      },
-    });
+    const { user } = request;
+    const where =
+      user.role === 'user'
+        ? { userId: user.id }
+        : { user: { organizationId: user.organizationId } };
+    const tasks = await prisma.task.findMany({ where });
     return NextResponse.json(tasks, { status: 200 });
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ error: 'Failed to fetch tasks' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to fetch tasks' },
+      { status: 500 }
+    );
   }
-}
+});
 
-export async function POST(request: Request) {
+export const POST = withAuth(async (request: AuthRequest) => {
   const body = createTaskSchema.safeParse(await request.json());
   if (!body.success) {
     return NextResponse.json(
@@ -48,10 +51,34 @@ export async function POST(request: Request) {
   }
 
   try {
-    const task = await prisma.task.create({ data: body.data });
+    const { user } = request;
+    const data = body.data;
+
+    if (user.role === 'user') {
+      data.userId = user.id;
+    } else {
+      if (!data.userId) {
+        return NextResponse.json(
+          { error: 'userId is required' },
+          { status: 400 }
+        );
+      }
+      const targetUser = await prisma.user.findUnique({
+        where: { id: data.userId },
+        select: { organizationId: true },
+      });
+      if (!targetUser || targetUser.organizationId !== user.organizationId) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
+    }
+
+    const task = await prisma.task.create({ data });
     return NextResponse.json(task, { status: 201 });
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ error: 'Failed to create task' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to create task' },
+      { status: 500 }
+    );
   }
-}
+});

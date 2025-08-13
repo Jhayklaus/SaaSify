@@ -2,9 +2,9 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import bcrypt from 'bcrypt';
 import { z } from 'zod';
+import { withAuth, AuthRequest } from '@/middleware/withAuth';
 
 const ROLES = ['admin', 'manager', 'user'] as const;
-// type Role = typeof ROLES[number];
 
 const userQuerySchema = z.object({
   email: z.string().email().optional(),
@@ -12,14 +12,14 @@ const userQuerySchema = z.object({
 });
 
 const createUserSchema = z.object({
-  name: z.string(),
+  name: z.string().min(1, 'Name is required'),
   email: z.string().email(),
   role: z.enum(ROLES),
   password: z.string().optional(),
   organizationId: z.number().int(),
 });
 
-export async function GET(request: Request) {
+export const GET = withAuth(async (request: AuthRequest) => {
   const parsed = userQuerySchema.safeParse(
     Object.fromEntries(new URL(request.url).searchParams)
   );
@@ -30,13 +30,13 @@ export async function GET(request: Request) {
     );
   }
 
-  const { email, organizationId } = parsed.data;
+  const { email } = parsed.data;
 
   try {
     const users = await prisma.user.findMany({
       where: {
         ...(email ? { email } : {}),
-        ...(organizationId ? { organizationId } : {}),
+        organizationId: request.user.organizationId,
       },
       select: {
         id: true,
@@ -55,9 +55,9 @@ export async function GET(request: Request) {
       { status: 500 }
     );
   }
-}
+}, { roles: ['admin', 'manager'] });
 
-export async function POST(request: Request) {
+export const POST = withAuth(async (request: AuthRequest) => {
   const body = createUserSchema.safeParse(await request.json());
   if (!body.success) {
     return NextResponse.json(
@@ -69,6 +69,10 @@ export async function POST(request: Request) {
   const { name, email, role, password, organizationId } = body.data;
 
   try {
+    if (organizationId !== request.user.organizationId) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     const hashedPassword = password ? await bcrypt.hash(password, 10) : undefined;
 
     const user = await prisma.user.create({
@@ -76,7 +80,7 @@ export async function POST(request: Request) {
         name,
         email,
         role,
-        password: hashedPassword, // optional
+        password: hashedPassword,
         organizationId,
       },
       select: {
@@ -96,4 +100,4 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
-}
+}, { roles: ['admin'] });
