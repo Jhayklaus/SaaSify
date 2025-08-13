@@ -33,4 +33,30 @@ model Task {
   assignedTo Int
   status     String
   user       User   @relation(fields: [assignedTo], references: [id])
+  attachments Attachment[]
+  comments    Comment[]
+  activities  Activity[]
+}
+
+model Attachment {
+  id     Int   @id @default(autoincrement())
+  name   String
+  data   String
+  taskId Int
+  task   Task  @relation(fields: [taskId], references: [id])
+}
+
+model Comment {
+  id      Int   @id @default(autoincrement())
+  content String
+  taskId  Int
+  task    Task  @relation(fields: [taskId], references: [id])
+}
+
+model Activity {
+  id        Int      @id @default(autoincrement())
+  description String
+  createdAt DateTime @default(now())
+  taskId    Int
+  task      Task     @relation(fields: [taskId], references: [id])
 }

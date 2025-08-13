@@ -21,9 +21,14 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   const { id: idParam } = await params;
   const id = Number(idParam);
   const data = await request.json();
-  
+
   try {
     const task = await prisma.task.update({ where: { id }, data });
+    if (data.status) {
+      await prisma.activity.create({
+        data: { taskId: id, description: `Status changed to ${data.status}` },
+      });
+    }
     return NextResponse.json(task, { status: 200 });
   } catch (err) {
     console.error(err);
