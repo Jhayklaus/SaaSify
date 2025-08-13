@@ -6,21 +6,31 @@ import { loginSchema } from '@/lib/validators';
 
 export async function POST(request: Request) {
   try {
+    // Rate limiting to prevent brute force attempts
     if (!checkRateLimit(request)) {
       return rateLimitResponse();
     }
 
-    const body = await request.json();
-    const parsed = loginSchema.safeParse(body);
+    const parsed = loginSchema.safeParse(await request.json());
     if (!parsed.success) {
-      return NextResponse.json({ error: 'Invalid input' }, { status: 400 });
+      return NextResponse.json(
+        { error: parsed.error.issues.map((i) => i.message).join(', ') },
+        { status: 400 }
+      );
     }
 
     const { email, password } = parsed.data;
 
     const user = await prisma.user.findUnique({
       where: { email },
-      select: { id: true, name: true, email: true, role: true, password: true, organizationId: true },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        password: true,
+        organizationId: true,
+      },
     });
 
     if (!user || !user.password) {
@@ -31,7 +41,6 @@ export async function POST(request: Request) {
     }
 
     const isValid = await bcrypt.compare(password, user.password);
-
     if (!isValid) {
       return NextResponse.json(
         { error: 'Invalid credentials' },
@@ -39,8 +48,8 @@ export async function POST(request: Request) {
       );
     }
 
-    const { password: passwordHash, ...safeUser } = user;
-    void passwordHash;
+    // Remove password from response
+    const { password: _password, ...safeUser } = user;
 
     return NextResponse.json(safeUser, { status: 200 });
   } catch (err) {
@@ -51,4 +60,3 @@ export async function POST(request: Request) {
     );
   }
 }
-

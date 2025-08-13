@@ -4,27 +4,33 @@ import bcrypt from 'bcrypt';
 import { checkRateLimit, rateLimitResponse } from '@/lib/rateLimit';
 import { userCreateSchema } from '@/lib/validators';
 import { z } from 'zod';
+import { withAuth, AuthRequest } from '@/middleware/withAuth';
 
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const querySchema = z.object({
-    email: z.string().email().optional(),
-    organizationId: z.coerce.number().int().optional(),
-  });
-  const parsed = querySchema.safeParse({
-    email: searchParams.get('email') ?? undefined,
-    organizationId: searchParams.get('organizationId') ?? undefined,
-  });
+const ROLES = ['admin', 'manager', 'user'] as const;
+
+const userQuerySchema = z.object({
+  email: z.string().email().optional(),
+  organizationId: z.coerce.number().int().optional(),
+});
+
+export const GET = withAuth(async (request: AuthRequest) => {
+  const parsed = userQuerySchema.safeParse(
+    Object.fromEntries(new URL(request.url).searchParams)
+  );
   if (!parsed.success) {
-    return NextResponse.json({ error: 'Invalid query' }, { status: 400 });
+    return NextResponse.json(
+      { error: parsed.error.issues.map((i) => i.message).join(', ') },
+      { status: 400 }
+    );
   }
-  const { email, organizationId } = parsed.data;
+
+  const { email } = parsed.data;
 
   try {
     const users = await prisma.user.findMany({
       where: {
         ...(email ? { email } : {}),
-        ...(organizationId ? { organizationId } : {}),
+        organizationId: request.user.organizationId,
       },
       select: {
         id: true,
@@ -43,27 +49,38 @@ export async function GET(request: Request) {
       { status: 500 }
     );
   }
-}
+}, { roles: ['admin', 'manager'] });
 
-export async function POST(request: Request) {
+export const POST = withAuth(async (request: AuthRequest) => {
+  if (!checkRateLimit(request)) {
+    return rateLimitResponse();
+  }
+
+  const body = userCreateSchema.safeParse(await request.json());
+  if (!body.success) {
+    return NextResponse.json(
+      { error: body.error.issues.map((i) => i.message).join(', ') },
+      { status: 400 }
+    );
+  }
+
+  const { name, email, role, password, organizationId } = body.data;
+
   try {
-    if (!checkRateLimit(request)) {
-      return rateLimitResponse();
+    // Only allow creating users in the same organization
+    if (organizationId !== request.user.organizationId) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const body = await request.json();
-    const parsed = userCreateSchema.safeParse(body);
-    if (!parsed.success) {
-      return NextResponse.json({ error: 'Invalid input' }, { status: 400 });
-    }
-
-    const { password, ...rest } = parsed.data;
     const hashedPassword = password ? await bcrypt.hash(password, 10) : undefined;
 
     const user = await prisma.user.create({
       data: {
-        ...rest,
+        name,
+        email,
+        role,
         password: hashedPassword,
+        organizationId,
       },
       select: {
         id: true,
@@ -82,4 +99,4 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
-}
+}, { roles: ['admin'] });
