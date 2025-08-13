@@ -1,22 +1,19 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import bcrypt from 'bcrypt';
+import { withAuth, AuthRequest } from '@/middleware/withAuth';
 
 const ROLES = ['admin', 'manager', 'user'] as const;
-// type Role = typeof ROLES[number];
 
-export async function GET(request: Request) {
+export const GET = withAuth(async (request: AuthRequest) => {
   const { searchParams } = new URL(request.url);
   const email = searchParams.get('email') ?? undefined;
-  const organizationId = searchParams.get('organizationId')
-    ? Number(searchParams.get('organizationId'))
-    : undefined;
 
   try {
     const users = await prisma.user.findMany({
       where: {
         ...(email ? { email } : {}),
-        ...(organizationId ? { organizationId } : {}),
+        organizationId: request.user.organizationId,
       },
       select: {
         id: true,
@@ -35,9 +32,9 @@ export async function GET(request: Request) {
       { status: 500 }
     );
   }
-}
+}, { roles: ['admin', 'manager'] });
 
-export async function POST(request: Request) {
+export const POST = withAuth(async (request: AuthRequest) => {
   try {
     const data = await request.json();
 
@@ -56,6 +53,10 @@ export async function POST(request: Request) {
         { error: `Role must be one of: ${ROLES.join(', ')}` },
         { status: 400 }
       );
+    }
+
+    if (organizationId !== request.user.organizationId) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     const hashedPassword = password ? await bcrypt.hash(password, 10) : undefined;
@@ -85,4 +86,5 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
-}
+}, { roles: ['admin'] });
+
