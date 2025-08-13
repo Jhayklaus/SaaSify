@@ -2,22 +2,26 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import { checkRateLimit, rateLimitResponse } from '@/lib/rateLimit';
+import { loginSchema } from '@/lib/validators';
 
 export async function POST(request: Request) {
   try {
-    const { email = '', password = '' } = await request.json();
-    const normalisedEmail = email.trim().toLowerCase();
-
-    if (!normalisedEmail || !password) {
-      return NextResponse.json(
-        { error: 'Email and password are required' },
-        { status: 400 }
-      );
+    if (!checkRateLimit(request)) {
+      return rateLimitResponse();
     }
+
+    const body = await request.json();
+    const parsed = loginSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Invalid input' }, { status: 400 });
+    }
+
+    const { email, password } = parsed.data;
 
     // 2️⃣ Explicitly fetch the hashed password
     const user = await prisma.user.findUnique({
-      where: { email: normalisedEmail },
+      where: { email },
       select: { id: true, email: true, role: true, password: true, organizationId: true },
     });
 

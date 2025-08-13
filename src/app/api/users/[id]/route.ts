@@ -1,28 +1,21 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import bcrypt from 'bcrypt';
+import { checkRateLimit, rateLimitResponse } from '@/lib/rateLimit';
+import { userUpdateSchema } from '@/lib/validators';
 import { z } from 'zod';
 
 const ROLES = ['admin', 'manager', 'user'] as const;
-
 const idSchema = z.coerce.number().int();
-
-const updateUserSchema = z
-  .object({
-    name: z.string().optional(),
-    email: z.string().email().optional(),
-    role: z.enum(ROLES).optional(),
-    password: z.string().optional(),
-    organizationId: z.number().int().optional(),
-  })
-  .refine((data) => Object.keys(data).length > 0, {
-    message: 'At least one field must be provided',
-  });
 
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  if (!checkRateLimit(request)) {
+    return rateLimitResponse();
+  }
+
   const { id: idParam } = await params;
   const id = idSchema.safeParse(idParam);
   if (!id.success) {
@@ -32,7 +25,7 @@ export async function PATCH(
     );
   }
 
-  const body = updateUserSchema.safeParse(await request.json());
+  const body = userUpdateSchema.safeParse(await request.json());
   if (!body.success) {
     return NextResponse.json(
       { error: body.error.issues.map((i) => i.message).join(', ') },
@@ -40,6 +33,7 @@ export async function PATCH(
     );
   }
 
+  // Restrict role changes to admins only
   const currentUserRole = request.headers.get('x-user-role');
   if (body.data.role && currentUserRole !== 'admin') {
     return NextResponse.json(
@@ -48,7 +42,7 @@ export async function PATCH(
     );
   }
 
-  const data: z.infer<typeof updateUserSchema> = { ...body.data };
+  const data = { ...body.data };
   if (data.password) {
     data.password = await bcrypt.hash(data.password, 10);
   }
@@ -68,7 +62,10 @@ export async function PATCH(
     return NextResponse.json(user, { status: 200 });
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ error: 'Failed to update user' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to update user' },
+      { status: 500 }
+    );
   }
 }
 
@@ -76,6 +73,10 @@ export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  if (!checkRateLimit(request)) {
+    return rateLimitResponse();
+  }
+
   const { id: idParam } = await params;
   const id = idSchema.safeParse(idParam);
   if (!id.success) {
@@ -90,6 +91,9 @@ export async function DELETE(
     return NextResponse.json({ message: 'User deleted' }, { status: 200 });
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ error: 'Failed to delete user' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to delete user' },
+      { status: 500 }
+    );
   }
 }

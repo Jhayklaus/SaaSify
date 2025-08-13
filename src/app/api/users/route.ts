@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import bcrypt from 'bcrypt';
+import { checkRateLimit, rateLimitResponse } from '@/lib/rateLimit';
+import { userCreateSchema } from '@/lib/validators';
 import { z } from 'zod';
 import { withAuth, AuthRequest } from '@/middleware/withAuth';
 
@@ -9,14 +11,6 @@ const ROLES = ['admin', 'manager', 'user'] as const;
 const userQuerySchema = z.object({
   email: z.string().email().optional(),
   organizationId: z.coerce.number().int().optional(),
-});
-
-const createUserSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  email: z.string().email(),
-  role: z.enum(ROLES),
-  password: z.string().optional(),
-  organizationId: z.number().int(),
 });
 
 export const GET = withAuth(async (request: AuthRequest) => {
@@ -58,7 +52,11 @@ export const GET = withAuth(async (request: AuthRequest) => {
 }, { roles: ['admin', 'manager'] });
 
 export const POST = withAuth(async (request: AuthRequest) => {
-  const body = createUserSchema.safeParse(await request.json());
+  if (!checkRateLimit(request)) {
+    return rateLimitResponse();
+  }
+
+  const body = userCreateSchema.safeParse(await request.json());
   if (!body.success) {
     return NextResponse.json(
       { error: body.error.issues.map((i) => i.message).join(', ') },
@@ -69,6 +67,7 @@ export const POST = withAuth(async (request: AuthRequest) => {
   const { name, email, role, password, organizationId } = body.data;
 
   try {
+    // Only allow creating users in the same organization
     if (organizationId !== request.user.organizationId) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }

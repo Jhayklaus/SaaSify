@@ -1,18 +1,10 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import prisma from '@/lib/prisma';
+import { checkRateLimit, rateLimitResponse } from '@/lib/rateLimit';
+import { taskUpdateSchema } from '@/lib/validators';
 
 const idSchema = z.coerce.number().int();
-
-const updateTaskSchema = z
-  .object({
-    title: z.string().optional(),
-    assignedTo: z.number().int().optional(),
-    status: z.string().optional(),
-  })
-  .refine((data) => Object.keys(data).length > 0, {
-    message: 'At least one field must be provided',
-  });
 
 export async function GET(
   request: Request,
@@ -46,6 +38,10 @@ export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  if (!checkRateLimit(request)) {
+    return rateLimitResponse();
+  }
+
   const { id: idParam } = await params;
   const id = idSchema.safeParse(idParam);
   if (!id.success) {
@@ -55,7 +51,7 @@ export async function PUT(
     );
   }
 
-  const data = updateTaskSchema.safeParse(await request.json());
+  const data = taskUpdateSchema.safeParse(await request.json());
   if (!data.success) {
     return NextResponse.json(
       { error: data.error.issues.map((i) => i.message).join(', ') },
@@ -69,7 +65,7 @@ export async function PUT(
       data: data.data,
     });
 
-    // Log status change in activity log
+    // Log status change
     if (data.data.status) {
       await prisma.activityLog.create({
         data: {
@@ -93,6 +89,10 @@ export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  if (!checkRateLimit(request)) {
+    return rateLimitResponse();
+  }
+
   const { id: idParam } = await params;
   const id = idSchema.safeParse(idParam);
   if (!id.success) {

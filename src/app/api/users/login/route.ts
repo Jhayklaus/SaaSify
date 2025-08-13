@@ -1,15 +1,16 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import bcrypt from 'bcrypt';
-import { z } from 'zod';
-
-const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string(),
-});
+import { checkRateLimit, rateLimitResponse } from '@/lib/rateLimit';
+import { loginSchema } from '@/lib/validators';
 
 export async function POST(request: Request) {
   try {
+    // Rate limiting to prevent brute force attempts
+    if (!checkRateLimit(request)) {
+      return rateLimitResponse();
+    }
+
     const parsed = loginSchema.safeParse(await request.json());
     if (!parsed.success) {
       return NextResponse.json(
@@ -22,7 +23,14 @@ export async function POST(request: Request) {
 
     const user = await prisma.user.findUnique({
       where: { email },
-      select: { id: true, name: true, email: true, role: true, password: true, organizationId: true },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        password: true,
+        organizationId: true,
+      },
     });
 
     if (!user || !user.password) {
@@ -33,7 +41,6 @@ export async function POST(request: Request) {
     }
 
     const isValid = await bcrypt.compare(password, user.password);
-
     if (!isValid) {
       return NextResponse.json(
         { error: 'Invalid credentials' },
@@ -41,8 +48,8 @@ export async function POST(request: Request) {
       );
     }
 
-    const { password: passwordHash, ...safeUser } = user;
-    void passwordHash;
+    // Remove password from response
+    const { password: _password, ...safeUser } = user;
 
     return NextResponse.json(safeUser, { status: 200 });
   } catch (err) {
@@ -53,4 +60,3 @@ export async function POST(request: Request) {
     );
   }
 }
-

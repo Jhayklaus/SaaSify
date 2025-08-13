@@ -1,16 +1,12 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import prisma from '@/lib/prisma';
+import { checkRateLimit, rateLimitResponse } from '@/lib/rateLimit';
+import { taskCreateSchema } from '@/lib/validators';
 import { withAuth, AuthRequest } from '@/middleware/withAuth';
 
 const getTasksQuerySchema = z.object({
   organizationId: z.coerce.number().int().optional(),
-});
-
-const createTaskSchema = z.object({
-  title: z.string().min(1, 'Title is required'),
-  userId: z.string().optional(), // will be set for normal users automatically
-  status: z.string().min(1, 'Status is required'),
 });
 
 export const GET = withAuth(async (request: AuthRequest) => {
@@ -30,6 +26,7 @@ export const GET = withAuth(async (request: AuthRequest) => {
       user.role === 'user'
         ? { userId: user.id }
         : { user: { organizationId: user.organizationId } };
+
     const tasks = await prisma.task.findMany({ where });
     return NextResponse.json(tasks, { status: 200 });
   } catch (err) {
@@ -42,7 +39,11 @@ export const GET = withAuth(async (request: AuthRequest) => {
 });
 
 export const POST = withAuth(async (request: AuthRequest) => {
-  const body = createTaskSchema.safeParse(await request.json());
+  if (!checkRateLimit(request)) {
+    return rateLimitResponse();
+  }
+
+  const body = taskCreateSchema.safeParse(await request.json());
   if (!body.success) {
     return NextResponse.json(
       { error: body.error.issues.map((i) => i.message).join(', ') },
@@ -55,6 +56,7 @@ export const POST = withAuth(async (request: AuthRequest) => {
     const data = body.data;
 
     if (user.role === 'user') {
+      // Force assigning to self for normal users
       data.userId = user.id;
     } else {
       if (!data.userId) {
