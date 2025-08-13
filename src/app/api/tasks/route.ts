@@ -1,11 +1,29 @@
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
 import prisma from '@/lib/prisma';
 
+const getTasksQuerySchema = z.object({
+  organizationId: z.coerce.number().int().optional(),
+});
+
+const createTaskSchema = z.object({
+  title: z.string(),
+  assignedTo: z.number().int(),
+  status: z.string(),
+});
+
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const organizationId = searchParams.get('organizationId')
-    ? Number(searchParams.get('organizationId'))
-    : undefined;
+  const query = getTasksQuerySchema.safeParse(
+    Object.fromEntries(new URL(request.url).searchParams)
+  );
+  if (!query.success) {
+    return NextResponse.json(
+      { error: query.error.issues.map((i) => i.message).join(', ') },
+      { status: 400 }
+    );
+  }
+
+  const { organizationId } = query.data;
 
   try {
     const tasks = await prisma.task.findMany({
@@ -21,9 +39,16 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const body = createTaskSchema.safeParse(await request.json());
+  if (!body.success) {
+    return NextResponse.json(
+      { error: body.error.issues.map((i) => i.message).join(', ') },
+      { status: 400 }
+    );
+  }
+
   try {
-    const data = await request.json();
-    const task = await prisma.task.create({ data });
+    const task = await prisma.task.create({ data: body.data });
     return NextResponse.json(task, { status: 201 });
   } catch (err) {
     console.error(err);
