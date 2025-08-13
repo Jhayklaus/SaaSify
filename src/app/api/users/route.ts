@@ -1,16 +1,24 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import bcrypt from 'bcrypt';
-
-const ROLES = ['admin', 'manager', 'user'] as const;
-// type Role = typeof ROLES[number];
+import { checkRateLimit, rateLimitResponse } from '@/lib/rateLimit';
+import { userCreateSchema } from '@/lib/validators';
+import { z } from 'zod';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const email = searchParams.get('email') ?? undefined;
-  const organizationId = searchParams.get('organizationId')
-    ? Number(searchParams.get('organizationId'))
-    : undefined;
+  const querySchema = z.object({
+    email: z.string().email().optional(),
+    organizationId: z.coerce.number().int().optional(),
+  });
+  const parsed = querySchema.safeParse({
+    email: searchParams.get('email') ?? undefined,
+    organizationId: searchParams.get('organizationId') ?? undefined,
+  });
+  if (!parsed.success) {
+    return NextResponse.json({ error: 'Invalid query' }, { status: 400 });
+  }
+  const { email, organizationId } = parsed.data;
 
   try {
     const users = await prisma.user.findMany({
@@ -39,34 +47,23 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const data = await request.json();
-
-    // Basic validation
-    const { name, email, role, password, organizationId } = data;
-
-    if (!name || !email || !role || !organizationId) {
-      return NextResponse.json(
-        { error: 'Name, email, role, and organizationId are required' },
-        { status: 400 }
-      );
+    if (!checkRateLimit(request)) {
+      return rateLimitResponse();
     }
 
-    if (!ROLES.includes(role)) {
-      return NextResponse.json(
-        { error: `Role must be one of: ${ROLES.join(', ')}` },
-        { status: 400 }
-      );
+    const body = await request.json();
+    const parsed = userCreateSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Invalid input' }, { status: 400 });
     }
 
+    const { password, ...rest } = parsed.data;
     const hashedPassword = password ? await bcrypt.hash(password, 10) : undefined;
 
     const user = await prisma.user.create({
       data: {
-        name,
-        email,
-        role,
-        password: hashedPassword, // optional
-        organizationId,
+        ...rest,
+        password: hashedPassword,
       },
       select: {
         id: true,
