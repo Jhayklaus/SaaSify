@@ -15,12 +15,14 @@ export function TaskModal({ isOpen, onClose, onSave, users, initialData = {} }: 
     const [title, setTitle] = useState('');
     const [assignedTo, setAssignedTo] = useState<number | ''>('');
     const [status, setStatus] = useState<'pending' | 'in-progress' | 'completed'>('pending');
+    const [priority, setPriority] = useState<'low' | 'medium' | 'high'>('medium');
 
     useEffect(() => {
         if (initialData) {
             setTitle(initialData.title ?? '');
             setAssignedTo(initialData.assignedTo ?? '');
             setStatus(initialData.status ?? 'pending');
+            setPriority(initialData.priority ?? 'medium');
         }
     }, [initialData]);
 
@@ -63,6 +65,17 @@ export function TaskModal({ isOpen, onClose, onSave, users, initialData = {} }: 
                     <option value="completed">Completed</option>
                 </select>
 
+                <label className="block text-sm font-medium mb-1">Priority</label>
+                <select
+                    value={priority}
+                    onChange={(e) => setPriority(e.target.value as typeof priority)}
+                    className="w-full border px-3 py-2 mb-3 rounded"
+                >
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                </select>
+
                 <div className="flex justify-end gap-3 mt-4">
                     <button
                         type="button"
@@ -78,6 +91,7 @@ export function TaskModal({ isOpen, onClose, onSave, users, initialData = {} }: 
                                 title,
                                 assignedTo: Number(assignedTo),
                                 status,
+                                priority,
                             })
                         }
                         className="text-sm text-white bg-primary hover:bg-primary/90 px-4 py-2 rounded"

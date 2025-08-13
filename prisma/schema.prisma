@@ -91,8 +91,11 @@ model ActivityLog {
   id        String   @id @default(cuid())
   taskId    String
   userId    String?
-  action    String
-  createdAt DateTime @default(now())
-  task      Task     @relation(fields: [taskId], references: [id])
-  user      User?    @relation(fields: [userId], references: [id])
+  field     String?   // Optional: which field was changed
+  oldValue  String?   // Optional: previous value
+  newValue  String?   // Optional: new value
+  action    String    // General action description
+  createdAt DateTime  @default(now())
+  task      Task      @relation(fields: [taskId], references: [id])
+  user      User?     @relation(fields: [userId], references: [id])
 }
