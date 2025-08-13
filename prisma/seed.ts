@@ -1,22 +1,23 @@
 // prisma/seed.ts
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Role, TaskStatus, TaskPriority } from '@prisma/client';
 import bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
+// Random data helpers
 const randomInt = (min: number, max: number) =>
   Math.floor(Math.random() * (max - min + 1)) + min;
 
 const generateRandomName = (i: number) => `User${i}`;
 const generateEmail = (i: number) => `user${i}@example.com`;
-const generateRole = () =>
-  (Math.random() > 0.5 ? 'manager' : 'user') as 'manager' | 'user';
-const generateStatus = () => {
-  const statuses = ['pending', 'in-progress', 'completed'];
+const generateRole = (): Role =>
+  Math.random() > 0.5 ? Role.MANAGER : Role.USER;
+const generateStatus = (): TaskStatus => {
+  const statuses = [TaskStatus.PENDING, TaskStatus.IN_PROGRESS, TaskStatus.COMPLETED];
   return statuses[randomInt(0, statuses.length - 1)];
 };
-const generatePriority = () => {
-  const priorities = ['low', 'medium', 'high'];
+const generatePriority = (): TaskPriority => {
+  const priorities = [TaskPriority.LOW, TaskPriority.MEDIUM, TaskPriority.HIGH];
   return priorities[randomInt(0, priorities.length - 1)];
 };
 
@@ -28,85 +29,91 @@ async function main() {
 
   console.log('🌱 Starting seed...');
 
-  // Step 0: Ensure a demo organization exists
+  await prisma.activityLog.deleteMany();
+  await prisma.attachment.deleteMany();
+  await prisma.comment.deleteMany();
+  await prisma.task.deleteMany();
+  await prisma.profile.deleteMany();
+  await prisma.user.deleteMany();
   await prisma.organization.deleteMany();
-  const organization = await prisma.organization.create({
-    data: {
-      name: 'Demo Org',
-      sector: 'General',
-      phone: '1234567890',
-    },
+
+  // Create base orgs
+  const adminOrg = await prisma.organization.create({
+    data: { name: 'Admin Org', sector: 'General', phone: '1111111111' }
+  });
+  const managerOrg = await prisma.organization.create({
+    data: { name: 'Manager Org', sector: 'General', phone: '2222222222' }
+  });
+  const userOrg = await prisma.organization.create({
+    data: { name: 'User Org', sector: 'General', phone: '3333333333' }
   });
 
-  // Step 1: Base users (Admin, Manager, User)
-  const baseUsers = await Promise.all([
-    prisma.user.upsert({
-      where: { email: 'alice@example.com' },
-      update: {},
-      create: {
-        name: 'Alice',
-        email: 'alice@example.com',
-        role: 'admin',
+  // Create fixed test accounts
+  await prisma.user.create({
+    data: {
+      name: 'Alice',
+      email: 'alice@example.com',
+      role: Role.ADMIN,
+      password: await bcrypt.hash('password123', 10),
+      organizationId: adminOrg.id,
+      profile: { create: { bio: 'Admin user' } }
+    }
+  });
+
+  await prisma.user.create({
+    data: {
+      name: 'Bob',
+      email: 'bob@example.com',
+      role: Role.MANAGER,
+      password: await bcrypt.hash('password123', 10),
+      organizationId: managerOrg.id,
+      profile: { create: { bio: 'Manager user' } }
+    }
+  });
+
+  await prisma.user.create({
+    data: {
+      name: 'Charlie',
+      email: 'charlie@example.com',
+      role: Role.USER,
+      password: await bcrypt.hash('password123', 10),
+      organizationId: userOrg.id,
+      profile: { create: { bio: 'Regular user' } }
+    }
+  });
+
+  // Generate random users for testing
+  const randomUsers: any[] = [];
+  for (let i = 1; i <= 10; i++) {
+    const newUser = await prisma.user.create({
+      data: {
+        name: generateRandomName(i),
+        email: generateEmail(i),
+        role: generateRole(),
         password: await bcrypt.hash('password123', 10),
-        organization: { connect: { id: organization.id } },
-      },
-    }),
-    prisma.user.upsert({
-      where: { email: 'bob@example.com' },
-      update: {},
-      create: {
-        name: 'Bob',
-        email: 'bob@example.com',
-        role: 'manager',
-        password: await bcrypt.hash('password123', 10),
-        organization: { connect: { id: organization.id } },
-      },
-    }),
-    prisma.user.upsert({
-      where: { email: 'charlie@example.com' },
-      update: {},
-      create: {
-        name: 'Charlie',
-        email: 'charlie@example.com',
-        role: 'user',
-        password: await bcrypt.hash('password123', 10),
-        organization: { connect: { id: organization.id } },
-      },
-    }),
-  ]);
+        organizationId: userOrg.id,
+        profile: { create: { bio: `Bio for user ${i}` } }
+      }
+    });
+    randomUsers.push(newUser);
+  }
 
-  // Step 2: Add 50 more users (random manager/user, no admins)
-  const extraUsers = await Promise.all(
-    Array.from({ length: 50 }).map(async (_, i) =>
-      prisma.user.create({
-        data: {
-          name: generateRandomName(i + 4),
-          email: generateEmail(i + 4),
-          role: generateRole(),
-          password: await bcrypt.hash('password123', 10),
-          organization: { connect: { id: organization.id } },
-        },
-      })
-    )
-  );
+  // Create tasks for random users
+  for (let i = 1; i <= 35; i++) {
+    const assignee = randomUsers[randomInt(0, randomUsers.length - 1)];
+    await prisma.task.create({
+      data: {
+        title: `Task ${i}`,
+        status: generateStatus(),
+        priority: generatePriority(),
+        organizationId: userOrg.id,
+        assigneeId: assignee.id,
+        createdById: assignee.id
+      }
+    });
+  }
 
-  const allUsers = [...baseUsers, ...extraUsers];
-
-  // Step 3: Wipe tasks before seeding
-  await prisma.task.deleteMany();
-
-  // Step 4: Add 35+ tasks assigned to random users
-  const totalTasks = 35;
-  const taskData = Array.from({ length: totalTasks }).map((_, i) => ({
-    title: `Task ${i + 1}`,
-    status: generateStatus(),
-    priority: generatePriority(),
-    assignedTo: allUsers[randomInt(0, allUsers.length - 1)].id,
-  }));
-
-  await prisma.task.createMany({ data: taskData });
-
-  console.log(`✅ Seed complete. Added ${allUsers.length} users and ${totalTasks} tasks.`);
+  console.log('✅ Seed complete. Added admin, manager, user, random users, and tasks.');
 }
 
 main()

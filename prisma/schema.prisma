@@ -1,4 +1,3 @@
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,41 +7,95 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Role {
+  ADMIN
+  MANAGER
+  USER
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
 model Organization {
-  id    Int    @id @default(autoincrement())
-  name  String
-  sector String
-  phone String?
-  users User[]
+  id      String @id @default(cuid())
+  name    String
+  sector  String
+  phone   String?
+  users   User[]
+  tasks   Task[]
 }
 
 model User {
-  id             Int    @id @default(autoincrement())
-  name           String
-  email          String @unique
-  role           String
-  password       String?
-  organizationId Int
-  organization   Organization @relation(fields: [organizationId], references: [id])
-  tasks          Task[]
+  id              String   @id @default(cuid())
+  name            String
+  email           String   @unique
+  role            Role     @default(USER)
+  password        String?
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id])
+  assignedTasks   Task[]   @relation("AssignedTasks")
+  createdTasks    Task[]   @relation("CreatedTasks")
+  profile         Profile?
+  activityLogs    ActivityLog[]
 }
 
 model Task {
-  id         Int    @id @default(autoincrement())
-  title      String
-  assignedTo Int
-  status     String
-  priority   String @default("medium")
-  user       User   @relation(fields: [assignedTo], references: [id])
-  activityLogs ActivityLog[]
+  id              String        @id @default(cuid())
+  title           String
+  organizationId  String
+  organization    Organization  @relation(fields: [organizationId], references: [id])
+  assigneeId      String?
+  assignee        User?         @relation("AssignedTasks", fields: [assigneeId], references: [id])
+  createdById     String
+  createdBy       User          @relation("CreatedTasks", fields: [createdById], references: [id])
+  status          TaskStatus    @default(PENDING)
+  priority        TaskPriority  @default(MEDIUM)
+  attachments     Attachment[]
+  comments        Comment[]
+  activityLogs    ActivityLog[]
+}
+
+model Profile {
+  id      String @id @default(cuid())
+  userId  String @unique
+  bio     String?
+  user    User   @relation(fields: [userId], references: [id])
+}
+
+model Attachment {
+  id      String @id @default(cuid())
+  taskId  String
+  url     String
+  name    String?
+  task    Task   @relation(fields: [taskId], references: [id])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  content   String
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id])
+  createdAt DateTime @default(now())
 }
 
 model ActivityLog {
-  id        Int      @id @default(autoincrement())
-  task      Task     @relation(fields: [taskId], references: [id])
-  taskId    Int
-  field     String
-  oldValue  String?
-  newValue  String?
-  createdAt DateTime @default(now())
+  id        String   @id @default(cuid())
+  taskId    String
+  userId    String?
+  field     String?   // Optional: which field was changed
+  oldValue  String?   // Optional: previous value
+  newValue  String?   // Optional: new value
+  action    String    // General action description
+  createdAt DateTime  @default(now())
+  task      Task      @relation(fields: [taskId], references: [id])
+  user      User?     @relation(fields: [userId], references: [id])
 }
