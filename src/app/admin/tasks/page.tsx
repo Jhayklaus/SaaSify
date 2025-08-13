@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import Link from 'next/link';
 import { useTasks, useCreateTask, useUpdateTask, useDeleteTask, Task } from '@/lib/hooks/useTasks';
 import { useUsers } from '@/lib/hooks/useUsers';
 import { TaskModal } from '@/components/modals/TaskModals';
@@ -110,7 +111,11 @@ export default function AdminTasksPage() {
                         <tbody>
                             {paginatedTasks.map((task) => (
                                 <tr key={task.id} className="border-t border-gray-200 hover:bg-gray-50">
-                                    <td className="p-3">{task.title}</td>
+                                    <td className="p-3">
+                                        <Link href={`/admin/tasks/${task.id}`} className="text-primary hover:underline">
+                                            {task.title}
+                                        </Link>
+                                    </td>
                                     <td className="p-3">{getAssigneeName(task.assignedTo)}</td>
                                     <td className="p-3 capitalize">
                                         <span className="px-2 py-1 rounded-full text-xs font-medium border border-gray-300">

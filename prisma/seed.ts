@@ -15,6 +15,10 @@ const generateStatus = () => {
   const statuses = ['pending', 'in-progress', 'completed'];
   return statuses[randomInt(0, statuses.length - 1)];
 };
+const generatePriority = () => {
+  const priorities = ['low', 'medium', 'high'];
+  return priorities[randomInt(0, priorities.length - 1)];
+};
 
 async function main() {
   if (process.env.NODE_ENV === 'production') {
@@ -96,6 +100,7 @@ async function main() {
   const taskData = Array.from({ length: totalTasks }).map((_, i) => ({
     title: `Task ${i + 1}`,
     status: generateStatus(),
+    priority: generatePriority(),
     assignedTo: allUsers[randomInt(0, allUsers.length - 1)].id,
   }));
 

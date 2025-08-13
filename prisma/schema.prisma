@@ -32,5 +32,17 @@ model Task {
   title      String
   assignedTo Int
   status     String
+  priority   String @default("medium")
   user       User   @relation(fields: [assignedTo], references: [id])
+  activityLogs ActivityLog[]
+}
+
+model ActivityLog {
+  id        Int      @id @default(autoincrement())
+  task      Task     @relation(fields: [taskId], references: [id])
+  taskId    Int
+  field     String
+  oldValue  String?
+  newValue  String?
+  createdAt DateTime @default(now())
 }

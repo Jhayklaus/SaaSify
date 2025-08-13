@@ -7,6 +7,16 @@ export interface Task {
   title: string;
   assignedTo: number;
   status: 'pending' | 'in-progress' | 'completed';
+  priority: 'low' | 'medium' | 'high';
+}
+
+export interface ActivityLog {
+  id: number;
+  taskId: number;
+  field: string;
+  oldValue: string | null;
+  newValue: string | null;
+  createdAt: string;
 }
 
 export const useTasks = () => {
@@ -57,5 +67,29 @@ export const useUpdateTask = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
     },
+  });
+};
+
+export const useTask = (id: number) => {
+  return useQuery<Task>({
+    queryKey: ['task', id],
+    queryFn: async () => {
+      const response = await fetcher.get(`/tasks/${id}`);
+      return response.data;
+    },
+    enabled: !!id,
+  });
+};
+
+export const useTaskActivity = (taskId: number, page = 1) => {
+  return useQuery<{ data: ActivityLog[]; page: number; limit: number; total: number }>({
+    queryKey: ['task', taskId, 'activity', page],
+    queryFn: async () => {
+      const response = await fetcher.get(`/tasks/${taskId}/activity`, {
+        params: { page },
+      });
+      return response.data;
+    },
+    enabled: !!taskId,
   });
 };

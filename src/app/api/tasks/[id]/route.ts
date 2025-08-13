@@ -21,9 +21,60 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   const { id: idParam } = await params;
   const id = Number(idParam);
   const data = await request.json();
-  
+
   try {
+    const existingTask = await prisma.task.findUnique({ where: { id } });
     const task = await prisma.task.update({ where: { id }, data });
+
+    if (existingTask) {
+      const logs = [] as {
+        taskId: number;
+        field: string;
+        oldValue: string | null;
+        newValue: string | null;
+      }[];
+
+      if (
+        data.status &&
+        data.status !== existingTask.status
+      ) {
+        logs.push({
+          taskId: id,
+          field: 'status',
+          oldValue: existingTask.status,
+          newValue: data.status,
+        });
+      }
+
+      if (
+        data.assignedTo &&
+        data.assignedTo !== existingTask.assignedTo
+      ) {
+        logs.push({
+          taskId: id,
+          field: 'assignee',
+          oldValue: String(existingTask.assignedTo),
+          newValue: String(data.assignedTo),
+        });
+      }
+
+      if (
+        data.priority &&
+        data.priority !== existingTask.priority
+      ) {
+        logs.push({
+          taskId: id,
+          field: 'priority',
+          oldValue: existingTask.priority,
+          newValue: data.priority,
+        });
+      }
+
+      if (logs.length > 0) {
+        await prisma.activityLog.createMany({ data: logs });
+      }
+    }
+
     return NextResponse.json(task, { status: 200 });
   } catch (err) {
     console.error(err);
